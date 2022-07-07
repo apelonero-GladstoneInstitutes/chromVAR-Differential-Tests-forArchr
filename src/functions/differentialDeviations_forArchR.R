@@ -18,11 +18,11 @@ differentialDeviations_ArchR <- function(object,
                                          alternative = c("two.sided", "less", "greater"),
                                          parametric = TRUE) {
   stopifnot(is(object,"ArchRProject"))
-  if (length(groups) == 1 && groups %in% colnames(ArchR_Project)) {
-    groups_archr <- getCellColData(ArchRProj = ArchR_Project, groups, drop = FALSE)
+  if (length(groups) == 1 && groups %in% colnames(object)) {
+    groups_archr <- getCellColData(ArchRProj = object, groups, drop = FALSE)
   } else {
     print("'groups' found in ArchR Metadata?")
-    print(table(groups %in% colnames(ArchR_Project)))
+    print(table(groups %in% colnames(object)))
     stop("LAZY DEV ERROR: Please, please.. one group at a time. Support for ngroups > 1 may be added in future. \n Additionally, please ensure 'groups' %in% colnames(ArchR_Project) == TRUE")
   }
   
@@ -106,11 +106,11 @@ wilcoxon_helper <- function(x, groups, alternative) {
 
 differentialVariability_ArchR <- function(object, groups, parametric = TRUE) {
   stopifnot(is(object,"ArchRProject"))
-  if (length(groups) == 1 && groups %in% colnames(ArchR_Project)) {
-    groups_archr <- getCellColData(ArchRProj = ArchR_Project, groups, drop = FALSE)
+  if (length(groups) == 1 && groups %in% colnames(object)) {
+    groups_archr <- getCellColData(ArchRProj = object, groups, drop = FALSE)
   } else {
     print("'groups' found in ArchR Metadata?")
-    print(table(groups %in% colnames(ArchR_Project)))
+    print(table(groups %in% colnames(object)))
     stop("LAZY DEV ERROR: Please, please.. one group at a time. Support for ngroups > 1 may be added in future. \n Additionally, please ensure 'groups' %in% colnames(ArchR_Project) == TRUE")
   }
 
