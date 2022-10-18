@@ -15,23 +15,20 @@
 
 differentialDeviations_ArchR <- function(object, 
                                          groups,
+                                         clust_subset = "none",
                                          alternative = c("two.sided", "less", "greater"),
                                          parametric = TRUE) {
   stopifnot(is(object,"ArchRProject"))
   if (length(groups) == 1 && groups %in% colnames(object)) {
     groups_archr <- getCellColData(ArchRProj = object, groups, drop = FALSE)
+    groups_archr$cell <- rownames(groups_archr)
   } else {
     print("'groups' found in ArchR Metadata?")
     print(table(groups %in% colnames(object)))
     stop("LAZY DEV ERROR: Please, please.. one group at a time. Support for ngroups > 1 may be added in future. \n Additionally, please ensure 'groups' %in% colnames(ArchR_Project) == TRUE")
   }
   
-  ### force groups from ArchR into ordered factor vetor
-  ## limited to one group per function call by use of index
-  ## TODO by me or you: add support for multiple groups e.g. `for(i in length(groups)){ ~~~loop all this and return as list of group-named dataframes~~~ }`
-  groups <- as.factor(groups_archr[,1])
-  
-  alternative <- match.arg(alternative)
+
   ## get deviations matrix from ArchR project
   if("MotifMatrix" %in% getAvailableMatrices(object)){
     archrMotifMatrix <- getMatrixFromProject(object, useMatrix = "MotifMatrix")
@@ -40,6 +37,23 @@ differentialDeviations_ArchR <- function(object,
   else {
     errorCondition("MotifMatrix not found in ArchR Project - please run addDeviationsMatrix() before running stats on.. deviations.")
   }
+  
+  ## subset groups and deviations
+  if(clust_subset != "none" & "Clusters" %in% colnames(object)){
+    ## TODO: add support for subestting by othermetadata (use dplyr to pass "clusters" arg as colname)
+    idxSample <- BiocGenerics::which(object$Clusters %in% clust_subset)
+    cells4subset <- object$cellNames[idxSample]
+    groups_archr <- groups_archr[groups_archr$cell %in% cells4subset,]
+    inputs <- inputs[,colnames(inputs) %in% cells4subset]
+  }
+  
+  ## force groups from ArchR into ordered factor vetor
+  ## limited to one group per function call by use of index
+  ## TODO by me or you: add support for multiple groups e.g. `for(i in length(groups)){ ~~~loop all this and return as list of group-named dataframes~~~ }`
+  groups <- as.factor(groups_archr[,1])
+  
+  alternative <- match.arg(alternative)
+
   
   ### original chromVAR code:
   if (parametric) {
@@ -122,7 +136,8 @@ differentialVariability_ArchR <- function(object, groups, parametric = TRUE) {
   ## get deviations matrix from ArchR project
   if("MotifMatrix" %in% getAvailableMatrices(object)){
     archrMotifMatrix <- getMatrixFromProject(object, useMatrix = "MotifMatrix")
-    inputs <- as.matrix(archrMotifMatrix@assays@data@listData$deviations)
+    ## use bias corrected z-scores - thank you to GitHub user @AnjaliC4
+    inputs <- as.matrix(archrMotifMatrix@assays@data@listData$z)
   }
   else {
     errorCondition("MotifMatrix not found in ArchR Project - please run addDeviationsMatrix() before running stats on.. deviations.")
